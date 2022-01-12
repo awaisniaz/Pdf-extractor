@@ -2,36 +2,11 @@ const fs = require("fs");
 const pdf = require("pdf-parse");
 const express = require("express");
 const { PdfReader } = require("pdfreader");
-const PDFparser = require("pdf2json");
-var pdf2table = require("pdf2table");
-const lineReader = require("line-reader");
 const PDFExtract = require("pdf.js-extract").PDFExtract;
-const _ = require("lodash");
-const superagent = require("superagent");
-const pdf2 = require("pdfjs-dist");
+const { Console } = require("console");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-app.get("/read_pdf", (req, res) => {
-  let dataBuffer = fs.readFileSync("RFQ.pdf");
-  pdf(dataBuffer).then(function (data) {
-    res.send(JSON.stringify(data.text));
-  });
-});
-app.get("/read", (req, res) => {
-  var pdfData = [];
-  new PdfReader().parseFileItems("RFQ.pdf", function (err, item) {
-    if (err) {
-      callback(err);
-    } else if (!item) {
-    } else if (item.text) {
-      // console.log(item.text)
-      pdfData.push(item.text);
-    }
-  });
-});
-
 app.get("/extract", (req, res) => {
   const pdfExtract = new PDFExtract();
   const options = {}; /* see below */
@@ -81,10 +56,22 @@ app.get("/extract", (req, res) => {
     var amountY = 0;
     var promiseX = 0;
     var promiseY = 0;
+    var TechDescriptionX = 0;
+    var techDescriptionY = 0;
+    var techTargetX = 0;
+    var techTargetY = 0;
+    var acceptanceTestX = 0;
+    var acceptanceTestY = 0;
+    var techResponseX = 0;
+    var techResponseY = 0;
+    var rulesResponseX = 0;
+    var responseRulesString = '';
+    var textCounter = 0;
+    var previousRulesKey = ''
 
     var datakeys = Object.keys(contentdata);
-    for (var i = 0; i < datakeys.length; i++) {
-      var currentPage = contentdata['Page3'];
+    for (var i = 0; i < 1; i++) {
+      var currentPage = contentdata["Page3"];
       previousX = Math.trunc(currentPage.content[i].x);
       previousY = Math.trunc(currentPage.content[i].y);
       for (var j = 0; j < currentPage.content.length; j++) {
@@ -109,7 +96,69 @@ app.get("/extract", (req, res) => {
           "Amount",
           "Promised Date",
         ];
-        if (Line.includes(currentPage.content[j].str)) {
+        let Tech = [
+          "Description",
+          "Target Value",
+          "Acceptable Values",
+          "Response Value",
+        ];
+        if (Tech.includes(currentPage.content[j].str.trim())) {
+          currentPageObject["Techdata"] = [];
+          counter = 0;
+          if (currentPage.content[j].str.trim() == "Description".trim()) {
+            TechDescriptionX = Math.trunc(currentPage.content[j].x);
+            techDescriptionY = Math.trunc(currentPage.content[j].y);
+          }
+          else if (currentPage.content[j].str.trim() == "Target Value".trim()) {
+            techTargetX = Math.trunc(currentPage.content[j].x);
+            techTargetY = Math.trunc(currentPage.content[j].y);
+          }
+          else if (currentPage.content[j].str.trim() == "Acceptable Values".trim()) {
+            acceptanceTestX = Math.trunc(currentPage.content[j].x);
+            acceptanceTestY = Math.trunc(currentPage.content[j].y);
+          }
+          else if (currentPage.content[j].str.trim() == "Response Value".trim()) {
+            techResponseX = Math.trunc(currentPage.content[j].x);
+            techResponseY = Math.trunc(currentPage.content[j].y);
+          }
+        }
+        else if (
+          TechDescriptionX == Math.trunc(currentPage.content[j].x) &&
+          techDescriptionY != Math.trunc(currentPage.content[j].y)
+        ) {
+          currentPageObject["Techdata"][`T${counter}`] = {
+            ...currentPageObject["Techdata"][`T${counter}`],
+           description: currentPage.content[j].str,
+          };
+        }
+        else if (
+          techTargetX == Math.trunc(currentPage.content[j].x) &&
+          techTargetY != Math.trunc(currentPage.content[j].y)
+        ) {
+          currentPageObject["Techdata"][`T${counter}`] = {
+            ...currentPageObject["Techdata"][`T${counter}`],
+           Target: currentPage.content[j].str,
+          };
+        }
+        else if (
+          acceptanceTestX == Math.trunc(currentPage.content[j].x) &&
+          acceptanceTestY != Math.trunc(currentPage.content[j].y)
+        ) {
+          currentPageObject["Techdata"][`T${counter}`] = {
+            ...currentPageObject["Techdata"][`T${counter}`],
+           AcceptanceTest: currentPage.content[j].str,
+          };
+        }
+        else if (
+          techResponseX == Math.trunc(currentPage.content[j].x) &&
+          techResponseY != Math.trunc(currentPage.content[j].y)
+        ) {
+          currentPageObject["Techdata"][`T${counter}`] = {
+            ...currentPageObject["Techdata"][`T${counter}`],
+           TechResponse: currentPage.content[j].str,
+          };
+        }
+         else if (Line.includes(currentPage.content[j].str.trim())) {
           counter = 0;
           previousX = 0;
           previousY = 0;
@@ -121,8 +170,8 @@ app.get("/extract", (req, res) => {
             itemx = Math.trunc(currentPage.content[j].x);
             itemY = Math.trunc(currentPage.content[j].y);
           } else if (currentPage.content[j].str.trim() == "Target".trim()) {
-            targetY = Math.trunc(currentPage.content[j].x);
-            targetX = Math.trunc(currentPage.content[j].y);
+            targetY = Math.trunc(currentPage.content[j].y);
+            targetX = Math.trunc(currentPage.content[j].x);
           } else if (currentPage.content[j].str.trim() == "Unit".trim()) {
             unitX = Math.trunc(currentPage.content[j].x);
             unity = Math.trunc(currentPage.content[j].y);
@@ -146,7 +195,7 @@ app.get("/extract", (req, res) => {
           Liney != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             LineName: currentPage.content[j].str,
           };
         } else if (
@@ -154,7 +203,7 @@ app.get("/extract", (req, res) => {
           itemY != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             item: currentPage.content[j].str,
           };
         } else if (
@@ -162,7 +211,7 @@ app.get("/extract", (req, res) => {
           targetY != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             target: currentPage.content[j].str,
           };
         } else if (
@@ -170,7 +219,7 @@ app.get("/extract", (req, res) => {
           unity != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             unit: currentPage.content[j].str,
           };
         } else if (
@@ -178,7 +227,7 @@ app.get("/extract", (req, res) => {
           responseY != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             Response: currentPage.content[j].str,
           };
         } else if (
@@ -186,7 +235,7 @@ app.get("/extract", (req, res) => {
           unitPriceY != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             unitPrice: currentPage.content[j].str,
           };
         } else if (
@@ -194,7 +243,7 @@ app.get("/extract", (req, res) => {
           amountY != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             amount: currentPage.content[j].str,
           };
         } else if (
@@ -202,12 +251,59 @@ app.get("/extract", (req, res) => {
           promiseY != Math.trunc(currentPage.content[j].y)
         ) {
           currentPageObject["lineData"][`l${counter}`] = {
-            ...currentPageObject["lineData"][`a${counter}`],
+            ...currentPageObject["lineData"][`l${counter}`],
             Promise: currentPage.content[j].str,
           };
 
           counter = counter + 1;
-        } else if (currentPage.content[j].str.trim == "2.2 Line Details") {
+        }
+        else if (
+          currentPage.content[j].str.trim() == "1.4 Response Rules".trim()
+        ) {
+          console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+          previousX = 0;
+          previousY = 0;
+          counter = 0;
+          rulesResponseX = Math.trunc(currentPage.content[j].y)
+          attachmentdataTypeY = 0;
+          attacheDescriptionX = 0;
+          attacheDescriptionY = 0;
+          attachmentdataTypeY = 0;
+          attachmentNameX = 0;
+          attachmentNameY = 0;
+          responseRulesString = currentPage.content[j].str.trim();
+          rulesX = Math.trunc(currentPage.content[j].x);
+          rulesY = Math.trunc(currentPage.content[j].y);
+
+
+        }
+        else if ("1.4 Response Rules".trim() == responseRulesString && "This negotiation is governed by all the rules displayed below.".trim() == currentPage.content[j].str.trim() ){
+            
+        }
+        else if ("1.4 Response Rules".trim() == responseRulesString.trim()){
+
+            if(textCounter% 2 != 0){
+            if(previousRulesKey =='X'.trim()){
+              currentPageObject["Rules"][`R${counter}`] = {
+                ...currentPageObject["Rules"][`R${counter}`],
+                Rule: currentPage.content[j].str,
+                selected :true
+              };
+            }
+            else{
+              currentPageObject["Rules"][`R${counter}`] = {
+                ...currentPageObject["Rules"][`R${counter}`],
+                Rule: currentPage.content[j].str,
+                selected :false
+              };
+            }
+            counter = counter + 1
+            }
+            textCounter = textCounter + 1
+            previousRulesKey = currentPage.content[j].str.trim()
+        }
+        
+        else if (currentPage.content[j].str.trim == "2.2 Line Details") {
           counter = 0;
           previousX = Math.trunc(currentPage.content[j].x);
           previousY = Math.trunc(currentPage.content[j].y);
@@ -227,6 +323,7 @@ app.get("/extract", (req, res) => {
           amountY = 0;
           promiseX = 0;
           promiseY = 0;
+          responseRuleY = 0
         } else if (Attachment.includes(currentPage.content[j].str)) {
           counter = 0;
           previousX = 0;
@@ -270,21 +367,17 @@ app.get("/extract", (req, res) => {
           };
 
           counter = counter + 1;
-        } else if (
-          currentPage.content[j].str.trim() == "1.4 Response Rules".trim()
-        ) {
-          previousX = 0;
-          previousY = 0;
-          counter = 0;
-          attachmentdataTypeY = 0;
-          attacheDescriptionX = 0;
-          attacheDescriptionY = 0;
-          attachmentdataTypeY = 0;
-          attachmentNameX = 0;
-          attachmentNameY = 0;
-          rulesX = Math.trunc(currentPage.content[j].x);
-          rulesY = Math.trunc(currentPage.content[j].y);
-        } else if (currency.includes(currentPage.content[j].str)) {
+        }
+
+        else if("2 Price Schedule".trim() == currentPage.content[j].str.trim()){
+              previousRulesKey = '';
+              counter = 0;
+              textCounter = 0;
+              responseRulesString = '';
+
+
+        }
+        else if (currency.includes(currentPage.content[j].str)) {
           counter = 0;
           currentPageObject["currencies"] = [];
           previousX = 0;
@@ -323,6 +416,7 @@ app.get("/extract", (req, res) => {
           excahngeY = 0;
           pricePrecisionX = 0;
           pricePrecisionY = 0;
+          currentPageObject["Rules"] = []
         } else if (
           currencyX == Math.trunc(currentPage.content[j].x) &&
           currecnyY != Math.trunc(currentPage.content[j].y)
@@ -356,12 +450,18 @@ app.get("/extract", (req, res) => {
             "Price Precision": currentPage.content[j].str,
           };
           counter = counter + 1;
-        } else if (currentPage.content[j].str.trim() == "Your Company ".trim()) {
-          let filterName = currentPage.content.filter(item=> {
-           return  Math.trunc(item.x) != Math.trunc(currentPage.content[j].x) && Math.trunc(item.y) == Math.trunc(currentPage.content[j].y)
-          })
-          currentPageObject[currentPage.content[j].str.trim()] = filterName[0].str
-        }else {
+        } else if (
+          currentPage.content[j].str.trim() == "Your Company ".trim()
+        ) {
+          let filterName = currentPage.content.filter((item) => {
+            return (
+              Math.trunc(item.x) != Math.trunc(currentPage.content[j].x) &&
+              Math.trunc(item.y) == Math.trunc(currentPage.content[j].y)
+            );
+          });
+          currentPageObject[currentPage.content[j].str.trim()] =
+            filterName[0].str;
+        } else {
           if (y == previousY && x == previousX) {
             if (counter % 2 == 0) {
               previousKey = currentPage.content[j].str;
@@ -416,7 +516,7 @@ app.get("/extract", (req, res) => {
               previousValue = previousValue + " " + currentPage.content[j].str;
               currentPageObject[previousKey] = previousValue;
             } else {
-              delete currentPageObject[previousKey]
+              delete currentPageObject[previousKey];
               previousKey = previousKey + " " + currentPage.content[j].str;
               currentPageObject[previousKey] = "";
             }
@@ -438,9 +538,8 @@ app.get("/extract", (req, res) => {
     }
 
     // res.send(currentPage.content);
-    console.log(pagesFilterData);
-    console.log(currentPageObject.lineData);
-    console.log(currentPageObject.Attachements);
+    console.log(pagesFilterData[0].Techdata);
+    // console.log())
     res.send(pagesFilterData);
   });
 });
