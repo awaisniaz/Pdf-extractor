@@ -3,7 +3,6 @@ const pdf = require("pdf-parse");
 const express = require("express");
 const { PdfReader } = require("pdfreader");
 const PDFExtract = require("pdf.js-extract").PDFExtract;
-const { Console } = require("console");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +14,7 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
     var previousY = 0;
     var counter = 0;
     var techTableCounter = 0;
+    var focCounter = 0;
     var previousKey = "";
     var previousValue = "";
     var currencyX = 0;
@@ -74,12 +74,30 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
     var lineAmmount = "";
     var linePromise = "";
     var TECH = "";
+    var FOCstring = ""
     var techDescription = "";
     var techTarget = "";
     var acceptanceValueTech = "";
     var techResponse = "";
     var mouseTrack = 0;
-    var responseValue = ''
+    var mouseTrackfOC = 0;
+    var mouseTrackFocy = 0;
+    var focdescription = '';
+    var foctarget = '';
+    var focacceptance = '';
+    var focResponse = ''; 
+    var Otherpages = ''
+
+    var focdescriptionX = 0;
+    var focdescriptionY= 0;
+    var foctargetX = 0;
+    var foctargetY = 0;
+    var focacceptanceX = 0;
+    var focacceptanceY = 0;
+    var focResponseX = 0;
+    var focResponseY = 0;
+
+
     var currentPage = contentdata[pageNum];
       previousX = Math.trunc(currentPage.content[index].x);
       previousY = Math.trunc(currentPage.content[index].y);
@@ -111,7 +129,37 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
           "Response Value",
           "Description",
         ];
-        if ((Tech.includes(currentPage.content[j].str.trim()) && TECH == "TECH")|| (Tech.includes(currentPage.content[j].str.trim()) && PageNumberText == "TECH") ) {
+        let FOC = [
+          "Target Value",
+          "Acceptable Values",
+          "Response Value",
+          "Description",
+        ];
+        if((FOC.includes(currentPage.content[j].str.trim()) && FOCstring == "FOC".trim())){
+          currentPageObject["Focdata"] = []
+          counter = 0;
+          if (currentPage.content[j].str.trim() == "Description".trim()) {
+            focdescriptionX = Math.trunc(currentPage.content[j].x);
+            focdescriptionY = Math.trunc(currentPage.content[j].y);
+          } else if (
+            currentPage.content[j].str.trim() == "Target Value".trim()
+          ) {
+            foctargetX = Math.trunc(currentPage.content[j].x);
+            foctargetY = Math.trunc(currentPage.content[j].y);
+          } else if (
+            currentPage.content[j].str.trim() == "Acceptable Values".trim()
+          ) {
+            focacceptanceX = Math.trunc(currentPage.content[j].x)+3;
+            focacceptanceY = Math.trunc(currentPage.content[j].y);
+          } else if (
+            currentPage.content[j].str.trim() == "Response Value".trim()
+          ) {
+            focResponseX = Math.trunc(currentPage.content[j].x);
+            focResponseY = Math.trunc(currentPage.content[j].y);
+          }
+
+        }
+        else if ((Tech.includes(currentPage.content[j].str.trim()) && TECH == "TECH")|| (Tech.includes(currentPage.content[j].str.trim()) && PageNumberText == "TECH") ) {
           currentPageObject["Techdata"] = [];
           counter = 0;
           if (currentPage.content[j].str.trim() == "Description".trim()) {
@@ -136,7 +184,21 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
         } else if (currentPage.content[j].str.trim() == "TECH".trim()) {
           // TECH = currentPage.content[j].str.trim();
           TECH = currentPage.content[j].str.trim()
-        } else if(currentPage.content[j].str.trim() == "(Score for the response)".trim()){
+        }else if (currentPage.content[j].str.trim() == "FOC".trim()) {
+          // TECH = currentPage.content[j].str.trim();
+          techDescriptionY = 0
+          TechDescriptionX = 0
+          techResponseY = 0;
+          techResponseX = 0 ;
+          acceptanceTestY = 0;
+          acceptanceTestX = 0;
+          techTargetX = 0;
+          techTargetY = 0;
+          mouseTrack = 0;
+          FOCstring = currentPage.content[j].str.trim()
+          techTableCounter = 0;
+        }
+         else if(currentPage.content[j].str.trim() == "(Score for the response)".trim()){
           console.log()
         }
          else if (mouseTrack > Math.trunc(currentPage.content[j].x)) {
@@ -152,7 +214,69 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
           acceptanceValueTech = "";
           techResponse = "";
           mouseTrack = Math.trunc(currentPage.content[j].x);
-        } else if (
+        } 
+        else if (mouseTrackfOC >= Math.trunc(currentPage.content[j].x) && Math.abs(mouseTrackFocy - Math.trunc(currentPage.content[j].y) ) >45 ) {
+          focCounter = focCounter + 1;
+          focdescription = "";
+          focdescription = focdescription + " " + currentPage.content[j].str;
+          // mouseTrack = Math.trunc(currentPage.content[j].x);
+          currentPageObject["Focdata"][focCounter] = {
+            ...currentPageObject["Focdata"][focCounter],
+            description: focdescription,
+          };
+          foctarget = "";
+          focacceptance = "";
+          focResponse = "";
+          mouseTrackfOC = Math.trunc(currentPage.content[j].x);
+          mouseTrackFocy = Math.trunc(currentPage.content[j].y);
+        }
+        else if (
+          focdescriptionX == Math.trunc(currentPage.content[j].x) &&
+          focdescriptionY != Math.trunc(currentPage.content[j].y)
+        ) {
+          focdescription = focdescription + " " + currentPage.content[j].str;
+          mouseTrackfOC = Math.trunc(currentPage.content[j].x);
+          mouseTrackFocy = Math.trunc(currentPage.content[j].y);
+          currentPageObject["Focdata"][focCounter] = {
+            ...currentPageObject["Focdata"][focCounter],
+            description: focdescription,
+          };
+        }
+        else if (
+          foctargetX == Math.trunc(currentPage.content[j].x) &&
+          foctargetY != Math.trunc(currentPage.content[j].y)
+        ) {
+          foctarget = foctarget + " " + currentPage.content[j].str;
+          mouseTrackfOC = Math.trunc(currentPage.content[j].x);
+          currentPageObject["Focdata"][focCounter] = {
+            ...currentPageObject["Focdata"][focCounter],
+            Target: foctarget,
+          };
+        }
+        else if (
+          focResponseX == Math.trunc(currentPage.content[j].x) &&
+          focResponseY != Math.trunc(currentPage.content[j].y)
+        ) {
+          focResponse = focResponse + " " + currentPage.content[j].str;
+          mouseTrackfOC = Math.trunc(currentPage.content[j].x);
+          currentPageObject["Focdata"][focCounter] = {
+            ...currentPageObject["Focdata"][focCounter],
+            Response: focResponse,
+          };
+        }
+        else if (
+          focacceptanceX == Math.trunc(currentPage.content[j].x) &&
+          focacceptanceY != Math.trunc(currentPage.content[j].y)
+        ) {
+          focacceptance = focacceptance + " " + currentPage.content[j].str;
+          mouseTrackfOC = Math.trunc(currentPage.content[j].x);
+          currentPageObject["Focdata"][focCounter] = {
+            ...currentPageObject["Focdata"][focCounter],
+            Acceptance: focacceptance,
+          };
+        }
+        
+        else if (
           TechDescriptionX == Math.trunc(currentPage.content[j].x) &&
           techDescriptionY != Math.trunc(currentPage.content[j].y)
         ) {
