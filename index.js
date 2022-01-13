@@ -7,17 +7,9 @@ const { Console } = require("console");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.get("/extract", (req, res) => {
-  const pdfExtract = new PDFExtract();
-  const options = {}; /* see below */
-  pdfExtract.extract("RFQ2.pdf", options, (err, data) => {
-    if (err) return console.log(err);
-    var contentdata = {};
-    data.pages.map((item, index) => {
-      let indexNumber = index + 1;
-      contentdata[`Page` + indexNumber] = data.pages[index];
-    });
-    var pagesFilterData = [];
+
+const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
+  
     var currentPageObject = {};
     var previousX = 0;
     var previousY = 0;
@@ -87,12 +79,10 @@ app.get("/extract", (req, res) => {
     var acceptanceValueTech = "";
     var techResponse = "";
     var mouseTrack = 0;
-
-    var datakeys = Object.keys(contentdata);
-    for (var i = 0; i < 1; i++) {
-      var currentPage = contentdata["Page1"];
-      previousX = Math.trunc(currentPage.content[i].x);
-      previousY = Math.trunc(currentPage.content[i].y);
+    var responseValue = ''
+    var currentPage = contentdata[pageNum];
+      previousX = Math.trunc(currentPage.content[index].x);
+      previousY = Math.trunc(currentPage.content[index].y);
       for (var j = 0; j < currentPage.content.length; j++) {
         let x = Math.trunc(currentPage.content[j].x);
         let y = Math.trunc(currentPage.content[j].y);
@@ -121,7 +111,7 @@ app.get("/extract", (req, res) => {
           "Response Value",
           "Description",
         ];
-        if (Tech.includes(currentPage.content[j].str.trim()) && TECH == "TECH") {
+        if ((Tech.includes(currentPage.content[j].str.trim()) && TECH == "TECH")|| (Tech.includes(currentPage.content[j].str.trim()) && PageNumberText == "TECH") ) {
           currentPageObject["Techdata"] = [];
           counter = 0;
           if (currentPage.content[j].str.trim() == "Description".trim()) {
@@ -620,7 +610,28 @@ app.get("/extract", (req, res) => {
           }
         }
       }
-      pagesFilterData.push(currentPageObject);
+       return currentPageObject
+
+}
+app.get("/extract", (req, res) => {
+  const pdfExtract = new PDFExtract();
+  const options = {}; /* see below */
+  var pagesFilterData = [];
+  pdfExtract.extract("RFQ2.pdf", options, (err, data) => {
+    if (err) return console.log(err);
+    var contentdata = {};
+    data.pages.map((item, index) => {
+      let indexNumber = index + 1;
+      contentdata[`Page` + indexNumber] = data.pages[index];
+    });
+    var datakeys = Object.keys(contentdata);
+
+    
+    for (var i = 0; i < datakeys.length; i++) {
+      var pageNum = i+1
+      var pageText = pageNum > 4 ?'TECH'.trim() : ''
+      const extractedData =   etractePdf(contentdata,i,`Page${pageNum}`,pageText)
+      pagesFilterData.push(extractedData);
     }
 
     // res.send(currentPage.content);
