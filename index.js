@@ -90,11 +90,10 @@ app.get("/extract", (req, res) => {
 
     var datakeys = Object.keys(contentdata);
     for (var i = 0; i < 1; i++) {
-      var currentPage = contentdata["Page3"];
+      var currentPage = contentdata["Page1"];
       previousX = Math.trunc(currentPage.content[i].x);
       previousY = Math.trunc(currentPage.content[i].y);
       for (var j = 0; j < currentPage.content.length; j++) {
-        console.log(currentPage.content[j].str)
         let x = Math.trunc(currentPage.content[j].x);
         let y = Math.trunc(currentPage.content[j].y);
 
@@ -135,14 +134,12 @@ app.get("/extract", (req, res) => {
             techTargetY = Math.trunc(currentPage.content[j].y);
           } else if (
             currentPage.content[j].str.trim() == "Acceptable Values".trim()
-          ) {console.log("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+          ) {
             acceptanceTestX = Math.trunc(currentPage.content[j].x)+3;
             acceptanceTestY = Math.trunc(currentPage.content[j].y);
           } else if (
             currentPage.content[j].str.trim() == "Response Value".trim()
           ) {
-            console.log("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
-         
             techResponseX = Math.trunc(currentPage.content[j].x);
             techResponseY = Math.trunc(currentPage.content[j].y);
           }
@@ -153,15 +150,6 @@ app.get("/extract", (req, res) => {
           console.log()
         }
          else if (mouseTrack > Math.trunc(currentPage.content[j].x)) {
-          console.log(
-            "I am console hooooooooooooooooooooooooooooooooooooooooooooooooooooo ja yarrrrrrrrrrrrrrrrrrrrrrr"
-          );
-          console.log(currentPageObject["Techdata"])
-          console.log(currentPage.content[j].str);
-          console.log(Math.trunc(currentPage.content[j].x));
-          console.log(Math.trunc(currentPage.content[j].y));
-          console.log(mouseTrack);
-          console.log(counter)
           techTableCounter = techTableCounter + 1;
           techDescription = "";
           techDescription = techDescription + " " + currentPage.content[j].str;
@@ -200,7 +188,6 @@ app.get("/extract", (req, res) => {
           techResponseX == Math.trunc(currentPage.content[j].x) &&
           techResponseY != Math.trunc(currentPage.content[j].y)
         ) {
-            console.log("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP")
           mouseTrack = Math.trunc(currentPage.content[j].x);
           techResponse = techResponse + " " + currentPage.content[j].str;
           currentPageObject["Techdata"][techTableCounter] = {
@@ -212,8 +199,6 @@ app.get("/extract", (req, res) => {
           acceptanceTestX == Math.trunc(currentPage.content[j].x) &&
           acceptanceTestY != Math.trunc(currentPage.content[j].y)
         ) {
-          
-          console.log("[llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll")
           mouseTrack = Math.trunc(currentPage.content[j].x);
           acceptanceValueTech =
             acceptanceValueTech + " " + currentPage.content[j].str;
@@ -639,8 +624,6 @@ app.get("/extract", (req, res) => {
     }
 
     // res.send(currentPage.content);
-    console.log(pagesFilterData.Attachements);
-    // console.log())
     res.send(pagesFilterData);
   });
 });
