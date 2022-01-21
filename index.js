@@ -3,6 +3,8 @@ const pdf = require("pdf-parse");
 const express = require("express");
 const { PdfReader } = require("pdfreader");
 const PDFExtract = require("pdf.js-extract").PDFExtract;
+const { Console } = require("console");
+const { includes } = require("lodash");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -82,11 +84,13 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
     var mouseTrack = 0;
     var mouseTrackfOC = 0;
     var mouseTrackFocy = 0;
-    var focdescription = '';
+    var focdescription = '';  
     var foctarget = '';
     var focacceptance = '';
     var focResponse = ''; 
-    var Otherpages = ''
+    var Otherpages = '';
+    var lineDetails = false;
+    var lineDetailArray = [];
 
     var focdescriptionX = 0;
     var focdescriptionY= 0;
@@ -96,6 +100,9 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
     var focacceptanceY = 0;
     var focResponseX = 0;
     var focResponseY = 0;
+    var lineDetailsObject = []
+    var currentKeyLine = ""
+    var lineDetailsdata = {}
 
 
     var currentPage = contentdata[pageNum];
@@ -135,7 +142,15 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
           "Response Value",
           "Description",
         ];
-        if((FOC.includes(currentPage.content[j].str.trim()) && FOCstring == "FOC".trim())){
+        if(currentPage.content[j].str.trim() == "Table of Contents"){
+          return 
+        }
+
+        else if(currentPage.content[j].str.trim().includes('Line Details')){
+          lineDetails = true
+        }
+
+         else if((FOC.includes(currentPage.content[j].str.trim()) && FOCstring == "FOC".trim())){
           currentPageObject["Focdata"] = []
           counter = 0;
           if (currentPage.content[j].str.trim() == "Description".trim()) {
@@ -182,10 +197,11 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             techResponseY = Math.trunc(currentPage.content[j].y);
           }
         } else if (currentPage.content[j].str.trim() == "TECH".trim()) {
-          // TECH = currentPage.content[j].str.trim();
+          currentPageObject['lineDetailsObject'][currentKeyLine] = {...lineDetailsdata}
+          lineDetails = false
+
           TECH = currentPage.content[j].str.trim()
         }else if (currentPage.content[j].str.trim() == "FOC".trim()) {
-          // TECH = currentPage.content[j].str.trim();
           techDescriptionY = 0
           TechDescriptionX = 0
           techResponseY = 0;
@@ -219,7 +235,6 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
           focCounter = focCounter + 1;
           focdescription = "";
           focdescription = focdescription + " " + currentPage.content[j].str;
-          // mouseTrack = Math.trunc(currentPage.content[j].x);
           currentPageObject["Focdata"][focCounter] = {
             ...currentPageObject["Focdata"][focCounter],
             description: focdescription,
@@ -362,6 +377,7 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             ...currentPageObject["lineData"][counter],
             LineName: LineName,
           };
+          lineDetailArray.push(LineName)
         } else if (
           itemx == Math.trunc(currentPage.content[j].x) &&
           itemY != Math.trunc(currentPage.content[j].y)
@@ -662,12 +678,25 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
           currentPageObject[currentPage.content[j].str.trim()] =
             filterName[0].str;
         } else {
-          if (y == previousY && x == previousX) {
+           console.log(lineDetails)
+          if(lineDetailArray.findIndex(item=>currentPage.content[j].str.trim().includes(item))>-1){
+                    // lineDetailsObject[currentPage.content[j].str.trim()] = {}
+                    currentKeyLine = currentPage.content[j].str.trim()
+                    currentPageObject['lineDetailsObject']={}
+      
+          }
+          else if (y == previousY && x == previousX) {
             if (counter % 2 == 0) {
               previousKey = currentPage.content[j].str;
               currentPageObject[currentPage.content[j].str] = "";
             } else {
+              if(lineDetails==true){
+                lineDetailsdata[previousKey] = currentPage.content[j].str;
+                delete currentPageObject[previousKey]
+                console.log(currentPageObject)
+              }else{
               currentPageObject[previousKey] = currentPage.content[j].str;
+              }
             }
             counter = counter + 1;
             previousX = Math.trunc(currentPage.content[j].x);
@@ -681,7 +710,14 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
               if (y == previousY && x != previousX) {
                 previousValue = currentPage.content[j].str;
               }
-              currentPageObject[previousKey] = previousValue;
+              if(lineDetails==true){
+                lineDetailsdata[previousKey]= previousValue;
+                delete currentPageObject[previousKey]
+                console.log(currentPageObject)
+              }else{
+                currentPageObject[previousKey] = previousValue;
+              }
+              // currentPageObject[previousKey] = previousValue;
             }
             counter = counter + 1;
             previousX = Math.trunc(currentPage.content[j].x);
@@ -691,8 +727,6 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             y <= previousY + 2 &&
             x != previousX
           ) {
-            // currentPageObject[previousKey] = ''
-
             if (counter % 2 == 0) {
               previousKey = currentPage.content[j].str;
               currentPageObject[currentPage.content[j].str] = "";
@@ -705,7 +739,15 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
               } else {
                 previousValue = currentPage.content[j].str;
               }
-              currentPageObject[previousKey] = previousValue;
+              if(lineDetails==true){
+
+                lineDetailsdata[previousKey] = previousValue;
+                delete currentPageObject[previousKey]
+                console.log(currentPageObject)
+              }else{
+                currentPageObject[previousKey] = previousValue;
+              }
+              // currentPageObject[previousKey] = previousValue;
             }
             counter = counter + 1;
             previousX = Math.trunc(currentPage.content[j].x);
@@ -715,6 +757,13 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             if (previousValue != "") {
               previousValue = previousValue + " " + currentPage.content[j].str;
               currentPageObject[previousKey] = previousValue;
+              if(lineDetails==true){
+                lineDetailsdata[previousKey] = previousValue;
+                delete currentPageObject[previousKey]
+                console.log(currentPageObject)
+              }else{
+                currentPageObject[previousKey] = previousValue;
+              }
             } else {
               delete currentPageObject[previousKey];
               previousKey = previousKey + " " + currentPage.content[j].str;
