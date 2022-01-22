@@ -702,7 +702,6 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             previousX = Math.trunc(currentPage.content[j].x);
             previousY = Math.trunc(currentPage.content[j].y);
           } else if (y == previousY && x != previousX) {
-            // currentPageObject[previousKey] = ''
             if (counter % 2 == 0) {
               previousKey = currentPage.content[j].str;
               currentPageObject[currentPage.content[j].str] = "";
@@ -717,7 +716,6 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
               }else{
                 currentPageObject[previousKey] = previousValue;
               }
-              // currentPageObject[previousKey] = previousValue;
             }
             counter = counter + 1;
             previousX = Math.trunc(currentPage.content[j].x);
@@ -747,13 +745,11 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
               }else{
                 currentPageObject[previousKey] = previousValue;
               }
-              // currentPageObject[previousKey] = previousValue;
             }
             counter = counter + 1;
             previousX = Math.trunc(currentPage.content[j].x);
             previousY = Math.trunc(currentPage.content[j].y);
           } else if (y != previousY && x == previousX) {
-            // counter = 0
             if (previousValue != "") {
               previousValue = previousValue + " " + currentPage.content[j].str;
               currentPageObject[previousKey] = previousValue;
@@ -773,7 +769,6 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             previousX = Math.trunc(currentPage.content[j].x);
             previousY = Math.trunc(currentPage.content[j].y);
           } else if (y != previousY && x != previousX) {
-            // currentPageObject[previousKey] = ''
             counter = 1;
             previousKey = currentPage.content[j].str;
             currentPageObject[currentPage.content[j].str] = "";
@@ -781,6 +776,15 @@ const etractePdf = (contentdata,index,pageNum,PageNumberText)=>{
             previousY = Math.trunc(currentPage.content[j].y);
             previousValue = "";
           }
+        }
+      }
+      if(currentPageObject.hasOwnProperty('lineDetailsObject')){
+        if(currentPageObject.hasOwnProperty('Techdata')){
+          currentPageObject['lineDetailsObject'][currentKeyLine] = {
+            ...currentPageObject['lineDetailsObject'][currentKeyLine],
+            'TechDATA':currentPageObject['Techdata']
+          }
+          delete currentPageObject['Techdata']
         }
       }
        return currentPageObject
