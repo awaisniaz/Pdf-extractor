@@ -810,213 +810,271 @@ app.get("/mohabPdf", (req, res) => {
   const pdfExtract = new PDFExtract();
   const options = {}; /* see below */
   var pagesFilterData = [];
-  pdfExtract.extract("MOHAP 4.pdf", options, (err, data) => {
+  pdfExtract.extract("mohab3.pdf", options, (err, data) => {
     let counter = 0
     let previousX = 0;
     let previousY = 0;
     let previousKey = 0;
     let tableDATAkEY = ''
     let startingPoint = ''
+    var IngredientCounter = 0
     let tabledata = []
+    var packageCounter = 0
     var previousFont = ''
     if (err) return console.log(err);
     var contentdata = {};
-    data?.pages?.map(page=>{
-    page?.content?.map(item => {
-      if (item?.str == 'Shelf Life (months)') {
-        tableDATAkEY = item?.str
-        tabledata.push(item?.str)
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (tableDATAkEY == 'Shelf Life (months)') {
-        if (Math.trunc(item?.x) != previousX && Math.trunc(item?.y) != previousY) {
-          counter = 0
-          tableDATAkEY = 'storageValue'
-          contentdata[tabledata[counter]] = item?.str
-          counter = counter + 1
-        }
-        else {
-          tabledata.push(item?.str)
-          previousX = Math.trunc(item?.x)
-          previousY = Math.trunc(item?.y)
-        }
-
-      }
-      else if (tableDATAkEY == 'storageValue') {
-        contentdata[tabledata[counter]] = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        if (counter == tabledata.length - 1) {
-          counter = 0
-          tableDATAkEY = ''
-          tabledata = []
-        }
-        else {
-          counter = counter + 1
-        }
-      }
-
-      else if (item?.str == 'Pack Size(s)') {
-        tableDATAkEY = item?.str
-        tabledata.push(item?.str)
-        contentdata['packagingData'] = []
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (tableDATAkEY == 'Pack Size(s)') {
-        if (Math.trunc(item?.x) != previousX && Math.trunc(item?.y) != previousY) {
-          counter = 0
-          tableDATAkEY = 'PackageSize'
-          contentdata[tabledata[counter]] = item?.str
-          counter = counter + 1
-        }
-        else {
-          tabledata.push(item?.str)
-          previousX = Math.trunc(item?.x)
-          previousY = Math.trunc(item?.y)
-        }
-
-      }
-      else if (tableDATAkEY == 'PackageSize') {
-        if (item?.str == "(POM)") {
-          return
-        }
-        contentdata[tabledata[counter]] = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        if (counter == tabledata.length - 1) {
-          counter = 0
-          tableDATAkEY = ''
-          tabledata = []
-        }
-        else {
-          counter = counter + 1
-        }
-      }
-      else if (item?.str?.includes('This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official')) {
-        tableDATAkEY = 'This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official'
-        previousKey = item?.str
-        contentdata['Note'] = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (tableDATAkEY == 'This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official') {
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        contentdata['Note'] = contentdata['Note'] + ' ' + item?.str?.trim()
-      }
-      else if (item?.str == 'Issued on:') {
-        tableDATAkEY = item?.str
-        previousKey = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (tableDATAkEY == 'Issued on:') {
-        if (previousX != Math.trunc(item?.x) && previousY == Math.trunc(item?.y)) {
-          previousX = Math.trunc(item?.x)
-          previousY = Math.trunc(item?.y)
-          contentdata[previousKey] = contentdata[previousKey] != undefined ? contentdata[previousKey] + ' ' + item?.str?.trim() : item?.str?.trim()
-        } else {
-          previousX = Math.trunc(item?.x)
-          previousY = Math.trunc(item?.y)
-          tableDATAkEY = ''
-          previousKey = item?.str
-          contentdata[item?.str] = ''
-        }
-      }
-      else if (item?.str == 'Agent in U.A.E.') {
-        tableDATAkEY = item?.str
-        previousKey = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (tableDATAkEY == 'Agent in U.A.E.') {
-        contentdata[previousKey] = item?.str?.trim()
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        tableDATAkEY = ''
-      }
-      else if (item?.str == 'Marketing Authorization Holder') {
-        tableDATAkEY = item?.str
-        previousKey = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (tableDATAkEY == 'Marketing Authorization Holder') {
-        contentdata[previousKey] = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (item?.str == 'Manufacturer') {
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        contentdata['Manufacturer'] = ''
-      }
-      else if (item?.str == 'Active Ingredient(s)') {
-        tableDATAkEY = item?.str
-        tabledata.push(item?.str)
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        contentdata['activeIngredient'] = {}
-        tableDATAkEY = 'activeIngredient'
-      }
-      else if (tableDATAkEY == 'activeIngredient') {
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-        if (counter == 2) {
-          if (previousFont != item?.fontName) {
-            previousFont != item?.fontName
-            contentdata['Manufacturer'] = contentdata['Manufacturer'] + ' ' + item?.str
+    data?.pages?.map(page => {
+      page?.content?.map(item => {
+        if (item?.str?.includes("Certificate #:")) {
+          const certificate = item?.str?.split('#:')
+          if (!/\s/g.test(certificate[1])) {
           }
           else {
-            contentdata['Manufacturer'] = contentdata['Manufacturer'] + ' ' + item?.str
+            contentdata['Certificate'] = certificate[1]
           }
-          // counter = 0
-        }
-        else {
-          if (counter / 2 == 0) {
-            previousKey = item?.str
-            previousFont = item?.fontName
-            counter = counter + 1
-          } else {
-            contentdata['activeIngredient'] = {
-              [previousKey]: item?.str
 
-            }
-            previousFont = item?.fontName
+        }
+        if (item?.str == "Quantity") {
+          return
+        }
+        if (item?.str == 'Shelf Life (months)') {
+          tableDATAkEY = item?.str
+          tabledata.push(item?.str)
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (tableDATAkEY == 'Shelf Life (months)') {
+          if (Math.trunc(item?.x) != previousX && Math.trunc(item?.y) != previousY) {
+            counter = 0
+            tableDATAkEY = 'storageValue'
+            contentdata[tabledata[counter]] = item?.str
+            counter = counter + 1
+          }
+          else {
+            tabledata.push(item?.str)
+            previousX = Math.trunc(item?.x)
+            previousY = Math.trunc(item?.y)
+          }
+
+        }
+        else if (tableDATAkEY == 'storageValue') {
+          contentdata[tabledata[counter]] = item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          if (counter == tabledata.length - 1) {
+            counter = 0
+            tableDATAkEY = ''
+            tabledata = []
+          }
+          else {
             counter = counter + 1
           }
         }
-      }
-      else {
-        if (Math.trunc(item?.x) != previousX && Math.trunc(item?.y) != previousY) {
-          counter = 0
-          contentdata[item?.str] = ''
+        else if (item?.str == 'Active Ingredient(s)') {
+          tabledata = []
+          tableDATAkEY = item?.str
+          tabledata.push(item?.str)
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          contentdata['activeIngredient'] = []
+          tableDATAkEY = 'activeIngredient'
+        }
+
+        else if (item?.str == 'Pack Size(s)') {
+          tableDATAkEY = item?.str
+          tabledata.push(item?.str)
+          contentdata['packagingData'] = []
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (tableDATAkEY == 'Pack Size(s)') {
+          if (Math.trunc(item?.x) != previousX && Math.trunc(item?.y) != previousY) {
+            counter = 0
+            tableDATAkEY = 'PackageSize'
+            contentdata['packagingData'][packageCounter] = {
+              ...contentdata['packagingData'][packageCounter],
+              [tabledata[counter]]: item?.str
+            }
+            counter = counter + 1
+          }
+          else {
+            tabledata.push(item?.str)
+            previousX = Math.trunc(item?.x)
+            previousY = Math.trunc(item?.y)
+          }
+
+        }
+        else if (tableDATAkEY == 'PackageSize') {
+          if (item?.str == "(POM)") {
+            return
+          }
+          contentdata['packagingData'][packageCounter] = {
+            ...contentdata['packagingData'][packageCounter],
+            [tabledata[counter]]: item?.str
+          }
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          if (counter == tabledata.length - 1) {
+            counter = 0
+            // tableDATAkEY = ''
+            // tabledata = []
+            packageCounter = packageCounter + 1
+          }
+          else {
+            counter = counter + 1
+          }
+        }
+        else if (item?.str?.includes('This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official')) {
+          tableDATAkEY = 'This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official'
+          previousKey = item?.str
+          contentdata['Note'] = item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (tableDATAkEY == 'This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official') {
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          contentdata['Note'] = contentdata['Note'] + ' ' + item?.str?.trim()
+        }
+        else if (item?.str == 'Pass Code:') {
+          tableDATAkEY = item?.str
           previousKey = item?.str
           previousX = Math.trunc(item?.x)
           previousY = Math.trunc(item?.y)
-          counter = 1
+          contentdata[item?.str] = ''
+        }
+        else if (tableDATAkEY == 'Pass Code:') {
+          if (item?.str == ' ' || item?.str == '') {
+            contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+          }
+          else {
+            contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+            tableDATAkEY = ''
+            previousKey = ''
+
+          }
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+
+        }
+        else if (item?.str == 'Issued on:') {
+          tableDATAkEY = item?.str
+          previousKey = item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (tableDATAkEY == 'Issued on:') {
+          if (previousX != Math.trunc(item?.x) && previousY == Math.trunc(item?.y)) {
+            previousX = Math.trunc(item?.x)
+            previousY = Math.trunc(item?.y)
+            contentdata[previousKey] = contentdata[previousKey] != undefined ? contentdata[previousKey] + ' ' + item?.str?.trim() : item?.str?.trim()
+          } else {
+            previousX = Math.trunc(item?.x)
+            previousY = Math.trunc(item?.y)
+            tableDATAkEY = ''
+            previousKey = item?.str
+            contentdata[item?.str] = ''
+          }
+        }
+        else if (item?.str == 'Agent in U.A.E.') {
+          tableDATAkEY = item?.str
+          previousKey = item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (tableDATAkEY == 'Agent in U.A.E.') {
+          contentdata[previousKey] = item?.str?.trim()
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          tableDATAkEY = ''
+        }
+        else if (item?.str == 'Marketing Authorization Holder') {
+          tableDATAkEY = item?.str
+          previousKey = item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          contentdata[item?.str] = ''
+        }
+        else if (tableDATAkEY == 'Marketing Authorization Holder') {
+          contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (item?.str == 'Manufacturer') {
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+          contentdata['Manufacturer'] = ''
+        }
+
+        else if (tableDATAkEY == 'activeIngredient') {
+          console.log(Math.abs(previousX - Math.trunc(item?.x)))
+          console.log(item?.str)
+          if (counter == 2) {
+            if (previousFont != item?.fontName) {
+              previousFont != item?.fontName
+              contentdata['Manufacturer'] = contentdata['Manufacturer'] + ' ' + item?.str
+            }
+            else {
+              contentdata['Manufacturer'] = contentdata['Manufacturer'] + ' ' + item?.str
+            }
+            IngredientCounter = IngredientCounter + 1
+            // counter = 0
+          }
+          else {
+            if (counter / 2 == 0) {
+              previousKey = item?.str
+              previousFont = item?.fontName
+              contentdata['activeIngredient'][IngredientCounter] = {
+                ...contentdata['activeIngredient'][IngredientCounter],
+                ingredient: item?.str
+              }
+              counter = counter + 1
+              // if(Math.abs(previousX - Math.trunc(item?.x))>50){
+              //   counter = counter + 1
+              // }
+
+            } else {
+              contentdata['activeIngredient'][IngredientCounter] = {
+                ...contentdata['activeIngredient'][IngredientCounter],
+                quantity: item?.str
+              }
+              previousFont = item?.fontName
+
+              counter = counter + 1
+
+            }
+          }
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
         }
         else {
-          if (counter / 2 == 0) {
+          if (Math.trunc(item?.x) != previousX && Math.trunc(item?.y) != previousY) {
+            counter = 0
             contentdata[item?.str] = ''
             previousKey = item?.str
             previousX = Math.trunc(item?.x)
             previousY = Math.trunc(item?.y)
-            counter = counter + 1
+            counter = 1
           }
           else {
-            previousX = Math.trunc(item?.x)
-            previousY = Math.trunc(item?.y)
-            counter = counter + 1
-            contentdata[previousKey] = item?.str
-          }
+            if (counter / 2 == 0) {
+              contentdata[item?.str] = ''
+              previousKey = item?.str
+              previousX = Math.trunc(item?.x)
+              previousY = Math.trunc(item?.y)
+              counter = counter + 1
+            }
+            else {
+              previousX = Math.trunc(item?.x)
+              previousY = Math.trunc(item?.y)
+              counter = counter + 1
+              contentdata[previousKey] = item?.str
+            }
 
+          }
         }
-      }
+      })
     })
-  })
     res.send(contentdata);
   });
 });
@@ -1024,7 +1082,7 @@ app.get("/mohabPdf", (req, res) => {
 app.get('/muncipaldata', (req, res) => {
   const pdfExtract = new PDFExtract();
   const options = {};
-  pdfExtract.extract("m2.pdf", options, (err, data) => {
+  pdfExtract.extract("m1.pdf", options, (err, data) => {
     if (err) return console.log(err);
     var contentdata = {};
     var previousKey = ''
@@ -1035,111 +1093,110 @@ app.get('/muncipaldata', (req, res) => {
     var productDetailCounter = 0
     var keyName = ["Reference Number:", "Registration Status:", "Registration Date:", "Category:", "Brand Name:", "Company Name:", "Country of Origin:"]
     var startingPoint = ''
-    data?.pages?.map(page=>{
-      console.log(page)
-    page?.content?.map(item => {
-      
-      if (item?.str == "Product Name") {
-        startingPoint = item?.str
-        counter = counter + 1
-        previousKey = item?.str
-      }
-      else if (startingPoint == "Product Name") {
-        if (counter / 2 == 0) {
-        } else {
-          contentdata[previousKey] = item?.str?.trim()
-          startingPoint = ''
-          counter = 0
-          previousKey = ''
-        }
-      }
-      if (item?.str == keyName[keyCounter]) {
-        startingPoint = item?.str
-        contentdata[item?.str] = ''
-        counter = counter + 1
-        previousKey = item?.str
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
-      else if (startingPoint == keyName[keyCounter]) {
-        if (Math.abs(previousX - Math.trunc(item?.x)) < 60 && Math.abs(previousX - Math.trunc(item?.x)) > 2) {
-          contentdata[previousKey] = contentdata[previousKey] + item?.str
-        }
-        else if (Math.abs(previousX - Math.trunc(item?.x)) > 100) {
+    data?.pages?.map(page => {
+      page?.content?.map(item => {
 
+        if (item?.str == "Product Name") {
+          startingPoint = item?.str
           counter = counter + 1
-          if (counter == 2) {
-            contentdata[previousKey] = item?.str
+          previousKey = item?.str
+        }
+        else if (startingPoint == "Product Name") {
+          if (counter / 2 == 0) {
           } else {
+            contentdata[previousKey] = item?.str?.trim()
             startingPoint = ''
-            previousKey = item?.str
             counter = 0
-            keyCounter = keyCounter + 1
+            previousKey = ''
           }
         }
-        else {
+        if (item?.str == keyName[keyCounter]) {
+          startingPoint = item?.str
+          contentdata[item?.str] = ''
+          counter = counter + 1
+          previousKey = item?.str
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+        else if (startingPoint == keyName[keyCounter]) {
+          if (Math.abs(previousX - Math.trunc(item?.x)) < 60 && Math.abs(previousX - Math.trunc(item?.x)) > 2) {
+            contentdata[previousKey] = contentdata[previousKey] + item?.str
+          }
+          else if (Math.abs(previousX - Math.trunc(item?.x)) > 100) {
+
+            counter = counter + 1
+            if (counter == 2) {
+              contentdata[previousKey] = item?.str
+            } else {
+              startingPoint = ''
+              previousKey = item?.str
+              counter = 0
+              keyCounter = keyCounter + 1
+            }
+          }
+          else {
+
+          }
+          previousX = Math.trunc(item?.x)
+          previousY = Math.trunc(item?.y)
+        }
+
+        if (item?.str == "International Barcode:") {
+          startingPoint = 'International Barcode:'
+          previousKey = item?.str
+          contentdata[item?.str] = ''
+        }
+        else if (startingPoint == 'International Barcode:') {
+          if (item?.str == "Product Color / Shade:") {
+            startingPoint = 'Product Color / Shade:'
+            previousKey = item?.str
+            contentdata[item?.str] = ''
+          }
+          else {
+            contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+          }
+        }
+        else if (startingPoint == 'Product Color / Shade:') {
+          if (item?.str == "Scent / Flavor:") {
+            startingPoint = 'Scent / Flavor:'
+            previousKey = item?.str
+            contentdata[item?.str] = ''
+          }
+          else {
+            contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+          }
+        }
+        else if (startingPoint == 'Scent / Flavor:') {
+          if (item?.str == "Size / Weight / Volume:") {
+            startingPoint = 'Size / Weight / Volume:'
+            previousKey = item?.str
+            contentdata[item?.str] = ''
+          }
+          else {
+            contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+          }
+        }
+        else if (startingPoint == 'Size / Weight / Volume:') {
+          if (productDetailCounter < 2) {
+            contentdata[previousKey] = contentdata[previousKey] + ' ' + item?.str
+            productDetailCounter = productDetailCounter + 1
+            contentdata['Name'] = ''
+          }
+          else {
+            if (item?.str == "Variants Information") {
+              startingPoint = "Variants Information"
+            }
+            else {
+              contentdata['Name'] = contentdata['Name'] + ' ' + item?.str?.replace('undefined', '')
+            }
+          }
 
         }
-        previousX = Math.trunc(item?.x)
-        previousY = Math.trunc(item?.y)
-      }
+      })
 
-      if(item?.str == "International Barcode:"){
-        startingPoint = 'International Barcode:'
-        previousKey = item?.str
-        contentdata[item?.str] = ''
-      }
-      else if(startingPoint == 'International Barcode:'){
-        if(item?.str == "Product Color / Shade:" ){
-          startingPoint = 'Product Color / Shade:'
-          previousKey = item?.str
-          contentdata[item?.str] = ''
-        }
-        else{
-          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
-        }
-      }
-      else if(startingPoint == 'Product Color / Shade:'){
-        if(item?.str == "Scent / Flavor:" ){
-          startingPoint = 'Scent / Flavor:'
-          previousKey = item?.str
-          contentdata[item?.str] = ''
-        }
-        else{
-          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
-        }
-      }
-      else if(startingPoint == 'Scent / Flavor:'){
-        if(item?.str == "Size / Weight / Volume:" ){
-          startingPoint = 'Size / Weight / Volume:'
-          previousKey = item?.str
-          contentdata[item?.str] = ''
-        }
-        else{
-          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
-        }
-      }
-      else if(startingPoint == 'Size / Weight / Volume:'){
-        if(productDetailCounter < 2){
-          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
-          productDetailCounter = productDetailCounter + 1
-          contentdata['Name'] = ''
-        }
-        else{
-          if(item?.str == "Variants Information"){
-            startingPoint = "Variants Information"
-          }
-          else{
-          contentdata['Name'] = contentdata['Name']+' '+item?.str?.replace('undefined','')
-          }
-        }
-     
-      }
     })
-    
+    res.send(contentdata)
   })
-  res.send(contentdata)
-})
 
 
 })
