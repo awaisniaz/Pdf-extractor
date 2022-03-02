@@ -821,7 +821,8 @@ app.get("/mohabPdf", (req, res) => {
   const pdfExtract = new PDFExtract();
   const options = {}; /* see below */
   var pagesFilterData = [];
-  pdfExtract.extract("mohab3.pdf", options, (err, data) => {
+  pdfExtract.extract("mohab1.pdf", options, (err, data) => {
+    console.log(data?.pages)
     let counter = 0
     let previousX = 0;
     let previousY = 0;
@@ -832,9 +833,10 @@ app.get("/mohabPdf", (req, res) => {
     var previousFont = ''
     if (err) return console.log(err);
     var contentdata = {};
-    data?.pages[0]?.content?.map(item => {
+    data?.pages?.map(page=>{
+    page?.content?.map(item => {
       console.log(item)
-      
+
       if (item?.str == 'Shelf Life (months)') {
         tableDATAkEY = item?.str
         tabledata.push(item?.str)
@@ -908,14 +910,14 @@ app.get("/mohabPdf", (req, res) => {
       else if (item?.str?.includes('This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official')) {
         tableDATAkEY = 'This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official'
         previousKey = item?.str
-        contentdata['Note']  = item?.str
+        contentdata['Note'] = item?.str
         previousX = Math.trunc(item?.x)
         previousY = Math.trunc(item?.y)
       }
-      else if (tableDATAkEY =='This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official') {  
-          previousX = Math.trunc(item?.x)
-          previousY = Math.trunc(item?.y)
-          contentdata['Note'] = contentdata['Note']  + ' ' + item?.str?.trim() 
+      else if (tableDATAkEY == 'This   document   is   generated   by   MOHAP   Drug   Department,   it   is   official') {
+        previousX = Math.trunc(item?.x)
+        previousY = Math.trunc(item?.y)
+        contentdata['Note'] = contentdata['Note'] + ' ' + item?.str?.trim()
       }
       else if (item?.str == 'Issued on:') {
         tableDATAkEY = item?.str
@@ -923,7 +925,7 @@ app.get("/mohabPdf", (req, res) => {
         previousX = Math.trunc(item?.x)
         previousY = Math.trunc(item?.y)
       }
-      else if (tableDATAkEY == 'Issued on:') {      
+      else if (tableDATAkEY == 'Issued on:') {
         if (previousX != Math.trunc(item?.x) && previousY == Math.trunc(item?.y)) {
           previousX = Math.trunc(item?.x)
           previousY = Math.trunc(item?.y)
@@ -1028,9 +1030,154 @@ app.get("/mohabPdf", (req, res) => {
         }
       }
     })
-    res.send(contentdata);
+  })
+    res.send({
+      Certificate: contentdata?.['Certificate #: '],
+      RegistrationNo:contentdata?.['Registration No. '],
+      FirstRegistration:contentdata?.['First Registration'],
+      ExpiryDate:contentdata?.['Expiry Date'],
+      ProductName:contentdata?.['Product Name'],
+      PharmaceuticalForm:contentdata?.['Pharmaceutical Form'],
+      ShelfLife:contentdata?.['Shelf Life (months)'],
+      StorageCondition:contentdata?.['Storage Condition'],
+      PackSize:contentdata?.['Pack Size(s)'],
+      PackSizePresentation:contentdata?.['Pack Size Presentation'],
+      DispensingMode:contentdata?.['Dispensing Mode'],
+      NDC:contentdata?.['NDC'],
+      activeIngredient:contentdata?.['activeIngredient'],
+      Manufacturer:contentdata?.['Manufacturer'],
+      authorizeHolder:contentdata?.['Marketing Authorization Holder'],
+      agentInUAE:contentdata?.['Agent in U.A.E.'],
+      issuedOn:contentdata?.['Issued on:'],
+      passCode:contentdata?.['Pass Code:'],
+      note:contentdata?.['Note']
+    })
+    // res.send(contentdata);
   });
 });
+
+app.get('/muncipaldata', (req, res) => {
+  const pdfExtract = new PDFExtract();
+  const options = {};
+  pdfExtract.extract("muncipal.pdf", options, (err, data) => {
+    if (err) return console.log(err);
+    var contentdata = {};
+    var previousKey = ''
+    var previousX = 0
+    var previousY = 0
+    var counter = 0
+    var keyCounter = 0
+    var productDetailCounter = 0
+    var keyName = ["Reference Number:", "Registration Status:", "Registration Date:", "Category:", "Brand Name:", "Company Name:", "Country of Origin:"]
+    var startingPoint = ''
+    data?.pages?.map(page=>{
+      console.log(page)
+    page?.content?.map(item => {
+      
+      if (item?.str == "Product Name") {
+        startingPoint = item?.str
+        counter = counter + 1
+        previousKey = item?.str
+      }
+      else if (startingPoint == "Product Name") {
+        if (counter / 2 == 0) {
+        } else {
+          contentdata[previousKey] = item?.str?.trim()
+          startingPoint = ''
+          counter = 0
+          previousKey = ''
+        }
+      }
+      if (item?.str == keyName[keyCounter]) {
+        startingPoint = item?.str
+        contentdata[item?.str] = ''
+        counter = counter + 1
+        previousKey = item?.str
+        previousX = Math.trunc(item?.x)
+        previousY = Math.trunc(item?.y)
+      }
+      else if (startingPoint == keyName[keyCounter]) {
+        if (Math.abs(previousX - Math.trunc(item?.x)) < 60 && Math.abs(previousX - Math.trunc(item?.x)) > 2) {
+          contentdata[previousKey] = contentdata[previousKey] + item?.str
+        }
+        else if (Math.abs(previousX - Math.trunc(item?.x)) > 100) {
+
+          counter = counter + 1
+          if (counter == 2) {
+            contentdata[previousKey] = item?.str
+          } else {
+            startingPoint = ''
+            previousKey = item?.str
+            counter = 0
+            keyCounter = keyCounter + 1
+          }
+        }
+        else {
+
+        }
+        previousX = Math.trunc(item?.x)
+        previousY = Math.trunc(item?.y)
+      }
+
+      if(item?.str == "International Barcode:"){
+        startingPoint = 'International Barcode:'
+        previousKey = item?.str
+        contentdata[item?.str] = ''
+      }
+      else if(startingPoint == 'International Barcode:'){
+        if(item?.str == "Product Color / Shade:" ){
+          startingPoint = 'Product Color / Shade:'
+          previousKey = item?.str
+          contentdata[item?.str] = ''
+        }
+        else{
+          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
+        }
+      }
+      else if(startingPoint == 'Product Color / Shade:'){
+        if(item?.str == "Scent / Flavor:" ){
+          startingPoint = 'Scent / Flavor:'
+          previousKey = item?.str
+          contentdata[item?.str] = ''
+        }
+        else{
+          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
+        }
+      }
+      else if(startingPoint == 'Scent / Flavor:'){
+        if(item?.str == "Size / Weight / Volume:" ){
+          startingPoint = 'Size / Weight / Volume:'
+          previousKey = item?.str
+          contentdata[item?.str] = ''
+        }
+        else{
+          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
+        }
+      }
+      else if(startingPoint == 'Size / Weight / Volume:'){
+        if(productDetailCounter < 2){
+          contentdata[previousKey] = contentdata[previousKey]+' '+item?.str
+          productDetailCounter = productDetailCounter + 1
+          contentdata['Name'] = ''
+        }
+        else{
+          if(item?.str == "Variants Information"){
+            startingPoint = "Variants Information"
+          }
+          else{
+          contentdata['Name'] = contentdata['Name']+' '+item?.str?.replace('undefined','')
+          }
+        }
+     
+      }
+    })
+    
+  })
+  res.send(contentdata)
+})
+
+
+})
 
 app.listen(PORT, () => {
   console.log(`I am Listing ${PORT}`);
