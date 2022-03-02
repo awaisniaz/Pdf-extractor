@@ -821,7 +821,7 @@ app.get("/mohabPdf", (req, res) => {
   const pdfExtract = new PDFExtract();
   const options = {}; /* see below */
   var pagesFilterData = [];
-  pdfExtract.extract("mohab1.pdf", options, (err, data) => {
+  pdfExtract.extract("MOHAP 4.pdf", options, (err, data) => {
     console.log(data?.pages)
     let counter = 0
     let previousX = 0;
@@ -874,6 +874,7 @@ app.get("/mohabPdf", (req, res) => {
       else if (item?.str == 'Pack Size(s)') {
         tableDATAkEY = item?.str
         tabledata.push(item?.str)
+        contentdata['packagingData'] = []
         previousX = Math.trunc(item?.x)
         previousY = Math.trunc(item?.y)
       }
@@ -1031,35 +1032,14 @@ app.get("/mohabPdf", (req, res) => {
       }
     })
   })
-    res.send({
-      Certificate: contentdata?.['Certificate #: '],
-      RegistrationNo:contentdata?.['Registration No. '],
-      FirstRegistration:contentdata?.['First Registration'],
-      ExpiryDate:contentdata?.['Expiry Date'],
-      ProductName:contentdata?.['Product Name'],
-      PharmaceuticalForm:contentdata?.['Pharmaceutical Form'],
-      ShelfLife:contentdata?.['Shelf Life (months)'],
-      StorageCondition:contentdata?.['Storage Condition'],
-      PackSize:contentdata?.['Pack Size(s)'],
-      PackSizePresentation:contentdata?.['Pack Size Presentation'],
-      DispensingMode:contentdata?.['Dispensing Mode'],
-      NDC:contentdata?.['NDC'],
-      activeIngredient:contentdata?.['activeIngredient'],
-      Manufacturer:contentdata?.['Manufacturer'],
-      authorizeHolder:contentdata?.['Marketing Authorization Holder'],
-      agentInUAE:contentdata?.['Agent in U.A.E.'],
-      issuedOn:contentdata?.['Issued on:'],
-      passCode:contentdata?.['Pass Code:'],
-      note:contentdata?.['Note']
-    })
-    // res.send(contentdata);
+    res.send(contentdata);
   });
 });
 
 app.get('/muncipaldata', (req, res) => {
   const pdfExtract = new PDFExtract();
   const options = {};
-  pdfExtract.extract("muncipal.pdf", options, (err, data) => {
+  pdfExtract.extract("m2.pdf", options, (err, data) => {
     if (err) return console.log(err);
     var contentdata = {};
     var previousKey = ''

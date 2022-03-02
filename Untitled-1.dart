@@ -1,0 +1,21 @@
+// res.send({
+    //   Certificate: contentdata?.['Certificate #: '],
+    //   RegistrationNo:contentdata?.['Registration No. '],
+    //   FirstRegistration:contentdata?.['First Registration'],
+    //   ExpiryDate:contentdata?.['Expiry Date'],
+    //   ProductName:contentdata?.['Product Name'],
+    //   PharmaceuticalForm:contentdata?.['Pharmaceutical Form'],
+    //   ShelfLife:contentdata?.['Shelf Life (months)'],
+    //   StorageCondition:contentdata?.['Storage Condition'],
+    //   PackSize:contentdata?.['Pack Size(s)'],
+    //   PackSizePresentation:contentdata?.['Pack Size Presentation'],
+    //   DispensingMode:contentdata?.['Dispensing Mode'],
+    //   NDC:contentdata?.['NDC'],
+    //   activeIngredient:contentdata?.['activeIngredient'],
+    //   Manufacturer:contentdata?.['Manufacturer'],
+    //   authorizeHolder:contentdata?.['Marketing Authorization Holder'],
+    //   agentInUAE:contentdata?.['Agent in U.A.E.'],
+    //   issuedOn:contentdata?.['Issued on:'],
+    //   passCode:contentdata?.['Pass Code:'],
+    //   note:contentdata?.['Note']
+    // })
