@@ -215,7 +215,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
       techTableCounter = 0;
     }
     else if (currentPage.content[j].str.trim() == "(Score for the response)".trim()) {
-      console.log()
     }
     else if (mouseTrack > Math.trunc(currentPage.content[j].x)) {
       techTableCounter = techTableCounter + 1;
@@ -549,11 +548,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
       attachmentNameX == Math.trunc(currentPage.content[j].x) &&
       attachmentNameY != Math.trunc(currentPage.content[j].y)
     ) {
-      // console.log(currentPageObject["Attachements"][0])
-      // currentPageObject["Attachements"][counter] = {
-      //   ...currentPageObject["Attachements"][counter],
-      //   Name: currentPageObject["Attachements"][0].Name + ' ' + currentPage.content[j].str,
-      // };
       attachementKey = attachementKey + " " + currentPage.content[j].str;
       var attachmentdT = "";
       var attachmentDes = "";
@@ -678,7 +672,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
       currentPageObject[currentPage.content[j].str.trim()] =
         filterName[0].str;
     } else {
-      console.log(lineDetails)
       if (lineDetailArray.findIndex(item => currentPage.content[j].str.trim().includes(item)) > -1) {
         // lineDetailsObject[currentPage.content[j].str.trim()] = {}
         currentKeyLine = currentPage.content[j].str.trim()
@@ -693,7 +686,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
           if (lineDetails == true) {
             lineDetailsdata[previousKey] = currentPage.content[j].str;
             delete currentPageObject[previousKey]
-            console.log(currentPageObject)
           } else {
             currentPageObject[previousKey] = currentPage.content[j].str;
           }
@@ -712,7 +704,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
           if (lineDetails == true) {
             lineDetailsdata[previousKey] = previousValue;
             delete currentPageObject[previousKey]
-            console.log(currentPageObject)
           } else {
             currentPageObject[previousKey] = previousValue;
           }
@@ -741,7 +732,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
 
             lineDetailsdata[previousKey] = previousValue;
             delete currentPageObject[previousKey]
-            console.log(currentPageObject)
           } else {
             currentPageObject[previousKey] = previousValue;
           }
@@ -756,7 +746,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
           if (lineDetails == true) {
             lineDetailsdata[previousKey] = previousValue;
             delete currentPageObject[previousKey]
-            console.log(currentPageObject)
           } else {
             currentPageObject[previousKey] = previousValue;
           }
@@ -822,7 +811,6 @@ app.get("/mohabPdf", (req, res) => {
   const options = {}; /* see below */
   var pagesFilterData = [];
   pdfExtract.extract("MOHAP 4.pdf", options, (err, data) => {
-    console.log(data?.pages)
     let counter = 0
     let previousX = 0;
     let previousY = 0;
@@ -835,8 +823,6 @@ app.get("/mohabPdf", (req, res) => {
     var contentdata = {};
     data?.pages?.map(page=>{
     page?.content?.map(item => {
-      console.log(item)
-
       if (item?.str == 'Shelf Life (months)') {
         tableDATAkEY = item?.str
         tabledata.push(item?.str)
@@ -976,7 +962,6 @@ app.get("/mohabPdf", (req, res) => {
         tableDATAkEY = 'activeIngredient'
       }
       else if (tableDATAkEY == 'activeIngredient') {
-        console.log(counter)
         previousX = Math.trunc(item?.x)
         previousY = Math.trunc(item?.y)
         if (counter == 2) {
