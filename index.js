@@ -5,12 +5,9 @@ const { PdfReader } = require("pdfreader");
 const PDFExtract = require("pdf.js-extract").PDFExtract;
 const { Console } = require("console");
 const { includes } = require("lodash");
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
-
   var currentPageObject = {};
   var previousX = 0;
   var previousY = 0;
