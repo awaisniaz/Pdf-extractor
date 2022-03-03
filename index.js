@@ -88,7 +88,6 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
   var Otherpages = '';
   var lineDetails = false;
   var lineDetailArray = [];
-
   var focdescriptionX = 0;
   var focdescriptionY = 0;
   var foctargetX = 0;
@@ -100,15 +99,12 @@ const etractePdf = (contentdata, index, pageNum, PageNumberText) => {
   var lineDetailsObject = []
   var currentKeyLine = ""
   var lineDetailsdata = {}
-
-
   var currentPage = contentdata[pageNum];
   previousX = Math.trunc(currentPage.content[index].x);
   previousY = Math.trunc(currentPage.content[index].y);
   for (var j = 0; j < currentPage.content.length; j++) {
     let x = Math.trunc(currentPage.content[j].x);
     let y = Math.trunc(currentPage.content[j].y);
-
     let currency = [
       "Currency",
       "Currency Description",
